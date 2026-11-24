@@ -113,7 +113,8 @@ def saved_days(ticker: str) -> list[date]:
     found = {date.fromisoformat(p.stem) for p in folder.glob("*.parquet")} if folder.exists() else set()
     try:
         import store
-        found |= set(store.list_days(ticker))
+        if store.enabled():
+            found |= set(store.list_days(ticker))
     except Exception:  # noqa: BLE001 - store not configured / offline
         pass
     return sorted(found)
@@ -284,7 +285,8 @@ def extract(d: date, tickers: Iterable[str], progress: Progress | None = None) -
             counts[t] = n
             try:
                 import store
-                store.push(p, t, d)
+                if store.enabled():
+                    store.push(p, t, d)
             except Exception as e:  # noqa: BLE001 - the shared copy is best-effort
                 print(f"store.push failed for {t} {d}: {e}")
         return counts

@@ -20,12 +20,14 @@ The API key is read from `.streamlit/secrets.toml` (`UW_API_TOKEN = "..."`), whi
 
        UW_API_TOKEN = "..."            # Unusual Whales API key
        APP_PASSWORD = "..."            # what Brittan types to get in
-       DATA_REPO = "nickriso05-byte/options-tape-data"
-       DATA_REPO_TOKEN = "github_pat_..."   # fine-grained token: Contents read/write, ONLY that repo
 
 On Cloud the app streams the 2.8 GB tape instead of saving it, keeping only the ticker's rows.
-Every saved day is also committed to the private `options-tape-data` repo (as ~20 MB parts, because
-of GitHub's API size limit), so saved days survive app restarts and show up for everyone.
+Days added on Cloud last until the app restarts (Streamlit wipes the disk then).
+
+Optional shared store (currently NOT used on Cloud): with `DATA_REPO` and `DATA_REPO_TOKEN`
+(a fine-grained token, Contents read/write on that repo only), every saved day is also committed
+to the private `options-tape-data` repo in ~20 MB parts, so days survive restarts and show up for
+everyone. Locally the GitHub CLI login is used instead of a token.
 
 ## Where the data comes from
 

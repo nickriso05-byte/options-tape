@@ -5,6 +5,9 @@ Streamlit Cloud wipes its disk when the app restarts, so every saved day is also
 to this repo, and any machine running the app (Cloud or local) downloads days it doesn't
 have yet. Files live at data/<TICKER>/<YYYY-MM-DD>.parquet, the same layout as locally.
 
+Optional. With no token the store is simply off: saved days live only on this machine's disk
+(on Streamlit Cloud that means until the app restarts).
+
 Config (env or Streamlit secrets):
   DATA_REPO        owner/name of the private repo
   DATA_REPO_TOKEN  fine-grained token with Contents read/write on that repo only.
@@ -41,18 +44,33 @@ def repo() -> str:
     return _secret("DATA_REPO") or "nickriso05-byte/options-tape-data"
 
 
+_gh_token: str | None = None
+
+
 def _token() -> str:
+    """DATA_REPO_TOKEN, else the local GitHub CLI login, else "" (store off)."""
+    global _gh_token
     t = _secret("DATA_REPO_TOKEN")
     if t:
         return t
-    try:
-        return subprocess.run(["gh", "auth", "token"], capture_output=True, text=True, timeout=15).stdout.strip()
-    except Exception as e:  # noqa: BLE001
-        raise RuntimeError("No DATA_REPO_TOKEN and no GitHub CLI login") from e
+    if _gh_token is None:
+        try:
+            _gh_token = subprocess.run(["gh", "auth", "token"], capture_output=True, text=True,
+                                       timeout=15).stdout.strip()
+        except Exception:  # noqa: BLE001 - no GitHub CLI (e.g. Streamlit Cloud)
+            _gh_token = ""
+    return _gh_token
+
+
+def enabled() -> bool:
+    return bool(_token())
 
 
 def _h(raw: bool = False) -> dict:
-    return {"Authorization": f"Bearer {_token()}", "X-GitHub-Api-Version": "2022-11-28",
+    tok = _token()
+    if not tok:
+        raise RuntimeError("Shared store is off (no DATA_REPO_TOKEN)")
+    return {"Authorization": f"Bearer {tok}", "X-GitHub-Api-Version": "2022-11-28",
             "Accept": "application/vnd.github.raw" if raw else "application/vnd.github+json"}
 
 

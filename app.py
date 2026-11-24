@@ -164,8 +164,11 @@ with st.sidebar:
                            help="Today's trades come straight from the Unusual Whales API. Big tickers take a minute.")
 
     with st.expander("Add a day", expanded=not have):
+        import store
+        keep = ("After that, the day opens instantly for everyone." if store.enabled() else
+                "After that it opens instantly, until the app restarts (it restarts after a few days unused).")
         st.markdown("<div class='help'>Past days come from the whole market's trade file for that day. "
-                    "The first time takes about 4–6 minutes. After that, the day opens instantly for everyone.</div>",
+                    f"The first time takes about 4–6 minutes. {keep}</div>",
                     unsafe_allow_html=True)
         new_day = st.date_input("Day", uw.last_trading_days(1)[0], max_value=date.today() - timedelta(days=1),
                                 min_value=date(2022, 1, 3), format="MM/DD/YYYY")
